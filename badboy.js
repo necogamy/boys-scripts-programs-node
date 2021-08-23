@@ -1,72 +1,97 @@
 const axios = require('axios'); // You must install axios for this request
+const { get } = axios;
 
-const checkNetApi = 'https://speedtest.techniknews.net/';
+
 const getIpApi = 'https://api.techniknews.net/ip/';
-const getIpDataApi = 'https://api.techniknews.net/ipgeo/${ip}';
+const getIpDataApi = 'https://api.techniknews.net/ipgeo/';
 
-let lines = '';
-for (let i = 0; i <= 78; i++) lines += '-';
 
-setTimeout(() => {
-  for (let i = 0; i < 30; i++) console.log('.');
-}, 3000)
 
-for (let i = 0; i < 30; i++) console.log(' ');
+function spaces(howMuch) {
+  for (let i = 1; i <= howMuch; i++) console.log('.');
+}
+function lines() {
+  let lines = '';
+  for (let i = 0; i <= 78; i++) lines += '-';
+  console.log(lines);
+}
 
-setTimeout(() => {
-  console.log('Hello, I will start to make a request to the desired API');
-}, 5000)
-setTimeout(() => {
-  console.log('Press ^C if you want to abort');
-}, 6000)
-setTimeout(() => {
-  console.log('Ok, then making request...');
-  console.log('Please wait');
-}, 12000)
+spaces(50);
+console.log('Requesting IP');
 
-setTimeout(() => {
-  for (let i = 0; i < 10; i++) console.log('.');
+function getIp() {
+  return new Promise((resolve, reject) => {
+    const timer = 10000;
+    let ip;
 
-  axios.get(getIpApi) // Enter an api here and see the magic
-    .then(response => {
-      let endResult = null;
-      try {
-        endResult = response.data;
-      } catch(e) {
-        throw e;
-      }
-      if (endResult !== null) {
-        console.log('Request done, here is the response');
-        for (let i = 0; i < 4; i++) console.log('.');
-        console.log('');
-        setTimeout(() => {
-          console.log(endResult);
-          console.log('');
-        }, 5000)
-      }
-    })
-    .then(ok => {
-      setTimeout(() => {
-        for (let i = 0; i < 10; i++) console.log('.');
-        console.log('Request done');
-        console.log('Press ^C to leave');
-      }, 10000)
-    })
-    .catch(notOk => {
-      for (let i = 0; i < 10; i++) console.log('.');
-      console.log('ALERT');
-      console.log('An error was received here the error message:')
-      setTimeout(() => {
-        console.log('');
-        console.log(lines);
-        console.log(notOk);
-        console.log(lines);
-        console.log('');
-      }, 3000)
-      setTimeout(() => {
-        for (let i = 0; i < 10; i++) console.log('.');
-        console.log('Throwing program. Press ^C to leave');
-      }, 6000)
-    });
+    try {
+      get(getIpApi)
+        .then(response => {
+          setTimeout(() => {
+            ip = response.data
+            return resolve(ip)
+          }, timer)
+        })
+        .catch(error => {
+          setTimeout(() => reject(error), timer)
+        });
+    }
+    catch(e) {
+      setTimeout(() => reject(e), timer)
+    }
+  });
+}
 
-}, 20000);
+function getIpData(ip) {
+  return new Promise((resolve, reject) => {
+    const timer = 10000;
+
+
+    try {
+      get(getIpDataApi + ip)
+        .then(response => {
+          setTimeout(() => resolve(response.data), timer)
+        })
+        .catch(e => {
+          setTimeout(() => reject(e), timer)
+        })
+    }
+    catch(e) {
+      setTimeout(() => reject(e), timer)
+    }
+  });
+}
+
+// Calls
+getIp()
+  .then(ipResponse => {
+    spaces(3)
+    lines()
+    console.log('The ip of this network is')
+    console.log(ipResponse)
+    lines()
+    return getIpData(ipResponse);
+  })
+  .then(ipInfo => {
+    const info = {};
+
+    function Data(data) {
+      this.data = data;
+    }
+
+    for (let item in ipInfo) {
+      info[item] = new Data(ipInfo[item]);
+    }
+
+    spaces(5);
+    console.log('Data retrieved successfully')
+    setTimeout(() => {
+      console.log('Sending data...')
+      spaces(5);
+    }, 1000)
+    setTimeout(() => console.table(info), 5000)
+    spaces(2)
+    setTimeout(() => console.info('Data successfully sent'), 7000)
+    setTimeout(() => console.warn('Press Ctrl+C to leave'), 8500)
+  })
+  .catch(e => console.log(e));
